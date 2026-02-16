@@ -74,8 +74,9 @@ function parseAuthSession(payload: unknown): AuthSession | null {
   }
 
   const name = (user as { name?: unknown }).name;
+  const email = (user as { email?: unknown }).email;
   const backendRole = (user as { role?: unknown }).role;
-  if (typeof name !== "string" || typeof backendRole !== "string") {
+  if (typeof name !== "string" || typeof email !== "string" || typeof backendRole !== "string") {
     return null;
   }
 
@@ -90,6 +91,7 @@ function parseAuthSession(payload: unknown): AuthSession | null {
     role,
     user: {
       name,
+      email,
       role,
     },
   };
