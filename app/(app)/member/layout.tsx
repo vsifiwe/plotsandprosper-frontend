@@ -1,17 +1,17 @@
-import { requireRoles } from "@/app/lib/auth";
+import { requireRole } from "@/app/lib/auth";
+import { SiteHeader } from "@/components/site-header";
 
 export default async function MemberLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = await requireRoles(["member", "admin"]);
-  const sectionTitle = session.role === "admin" ? "My Account" : "Member";
+  await requireRole("member");
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-5xl px-6 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">{sectionTitle}</h1>
-      </header>
-      {children}
-    </div>
+    <>
+      <SiteHeader title="Member" />
+      <div className="mx-auto min-h-screen w-full px-6 py-8">
+        {children}
+      </div>
+    </>
   );
 }
