@@ -2,9 +2,14 @@ import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
 
-import { type CreateMemberInput, type Member } from "../types";
+import {
+  type CreateMemberInput,
+  type Member,
+  type PaginatedMembers,
+} from "../types";
 
 const DEFAULT_ADMIN_MEMBERS_ENDPOINT = "http://localhost:8000/api/v1/members/";
+export const ADMIN_MEMBERS_PAGE_SIZE = 10;
 
 type BackendMember = {
   id: string;
@@ -15,6 +20,13 @@ type BackendMember = {
   nationalId: string;
   status: string;
   joinDate: string;
+};
+
+type BackendPaginatedMembers = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: unknown[];
 };
 
 type CreateBackendMemberPayload = {
@@ -44,6 +56,21 @@ function getAdminMembersEndpoint(): string {
   }
 
   return DEFAULT_ADMIN_MEMBERS_ENDPOINT;
+}
+
+function createAdminMembersUrl(page: number): string {
+  const endpoint = getAdminMembersEndpoint();
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+
+  try {
+    const url = new URL(endpoint);
+    url.searchParams.set("page", String(safePage));
+    url.searchParams.set("page_size", String(ADMIN_MEMBERS_PAGE_SIZE));
+    return url.toString();
+  } catch {
+    const separator = endpoint.includes("?") ? "&" : "?";
+    return `${endpoint}${separator}page=${safePage}&page_size=${ADMIN_MEMBERS_PAGE_SIZE}`;
+  }
 }
 
 function parseBackendMember(payload: unknown): Member | null {
@@ -95,6 +122,37 @@ function parseMembers(payload: unknown): Member[] | null {
   return members;
 }
 
+function parsePaginatedMembers(payload: unknown): PaginatedMembers | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const backendPaginatedMembers = payload as Partial<BackendPaginatedMembers>;
+  if (
+    typeof backendPaginatedMembers.count !== "number" ||
+    backendPaginatedMembers.count < 0 ||
+    !Number.isFinite(backendPaginatedMembers.count) ||
+    (backendPaginatedMembers.next !== null &&
+      typeof backendPaginatedMembers.next !== "string") ||
+    (backendPaginatedMembers.previous !== null &&
+      typeof backendPaginatedMembers.previous !== "string")
+  ) {
+    return null;
+  }
+
+  const results = parseMembers(backendPaginatedMembers.results);
+  if (!results) {
+    return null;
+  }
+
+  return {
+    count: backendPaginatedMembers.count,
+    next: backendPaginatedMembers.next,
+    previous: backendPaginatedMembers.previous,
+    results,
+  };
+}
+
 function extractErrorMessage(payload: unknown): string | null {
   if (!payload || typeof payload !== "object") {
     return null;
@@ -127,12 +185,12 @@ function mapCreateMemberInputToPayload(
   };
 }
 
-export async function fetchAdminMembers(): Promise<Member[]> {
+export async function fetchAdminMembers(page = 1): Promise<PaginatedMembers> {
   const session = await requireRole("admin");
 
   let response: Response;
   try {
-    response = await fetch(getAdminMembersEndpoint(), {
+    response = await fetch(createAdminMembersUrl(page), {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -169,15 +227,15 @@ export async function fetchAdminMembers(): Promise<Member[]> {
     );
   }
 
-  const members = parseMembers(payload);
-  if (!members) {
+  const membersPage = parsePaginatedMembers(payload);
+  if (!membersPage) {
     throw new MembersApiError(
       "Members response format is invalid.",
       response.status
     );
   }
 
-  return members;
+  return membersPage;
 }
 
 export async function createAdminMember(

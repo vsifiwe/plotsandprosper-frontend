@@ -4,15 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { createMemberAction } from "../actions";
-import { AddMemberDialog } from "../forms/add-member-dialog";
-import { CreateMemberInput, Member } from "../types";
+import { createContributionWindowAction } from "../actions";
+import { AddContributionWindowDialog } from "../forms/add-contribution-window-dialog";
+import { CreateContributionWindowInput, PaginatedContributionWindows } from "../types";
+import { ContributionWindowsList } from "./contribution-windows-list";
 import { Button } from "@/components/ui/button";
-import { MembersList } from "./members-list";
 
-type AdminMembersClientProps = {
-  initialMembers: Member[];
-  totalMembersCount: number;
+type AdminContributionWindowsClientProps = {
+  initialData: PaginatedContributionWindows;
   currentPage: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
@@ -20,32 +19,31 @@ type AdminMembersClientProps = {
 };
 
 function pageHref(pageNumber: number): string {
-  if (pageNumber <= 1) return "/admin/members";
-  return `/admin/members?page=${pageNumber}`;
+  if (pageNumber <= 1) return "/admin/contribution-window";
+  return `/admin/contribution-window?page=${pageNumber}`;
 }
 
-export function AdminMembersClient({
-  initialMembers,
-  totalMembersCount,
+export function AdminContributionWindowsClient({
+  initialData,
   currentPage,
   hasNextPage,
   hasPreviousPage,
   loadError,
-}: AdminMembersClientProps) {
+}: AdminContributionWindowsClientProps) {
   const router = useRouter();
-  const [isSavingMember, setIsSavingMember] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleCreateMember = async (memberData: CreateMemberInput) => {
-    setIsSavingMember(true);
+  const handleCreateWindow = async (windowData: CreateContributionWindowInput) => {
+    setIsSaving(true);
 
     try {
-      const result = await createMemberAction(memberData);
+      const result = await createContributionWindowAction(windowData);
       if (!result.ok) {
         throw new Error(result.message);
       }
       router.refresh();
     } finally {
-      setIsSavingMember(false);
+      setIsSaving(false);
     }
   };
 
@@ -53,10 +51,12 @@ export function AdminMembersClient({
     <main className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Members</h2>
-          <p className="text-sm text-zinc-600">All registered scheme members</p>
+          <h2 className="text-xl font-semibold">Contribution Windows</h2>
+          <p className="text-sm text-zinc-600">
+            Manage contribution windows and deadlines for members
+          </p>
         </div>
-        <AddMemberDialog isSaving={isSavingMember} onSubmit={handleCreateMember} />
+        <AddContributionWindowDialog isSaving={isSaving} onSubmit={handleCreateWindow} />
       </div>
 
       {loadError ? (
@@ -65,12 +65,12 @@ export function AdminMembersClient({
         </div>
       ) : null}
 
-      <MembersList members={initialMembers} />
+      <ContributionWindowsList windows={initialData.results} />
 
-      {!loadError && totalMembersCount > 0 ? (
+      {!loadError && initialData.count > 0 ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-zinc-600">
-            Total members: {totalMembersCount}
+            Total windows: {initialData.count}
           </p>
 
           <div className="flex items-center gap-2">

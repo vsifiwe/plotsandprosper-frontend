@@ -15,12 +15,6 @@ type MembersListProps = {
   members: Member[];
 };
 
-function statusClasses(status: MemberStatus) {
-  if (status === "ACTIVE") return "bg-emerald-100 text-emerald-800";
-  if (status === "SUSPENDED") return "bg-amber-100 text-amber-800";
-  return "bg-zinc-200 text-zinc-700";
-}
-
 function StatusBadge({ status }: { status: MemberStatus }) {
   return (
     <Badge variant="outline" className="text-muted-foreground px-1.5">

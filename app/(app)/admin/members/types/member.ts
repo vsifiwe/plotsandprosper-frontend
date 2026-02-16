@@ -16,4 +16,11 @@ export type Member = {
   joinDate: string;
 };
 
+export type PaginatedMembers = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Member[];
+};
+
 export type CreateMemberInput = Omit<Member, "id" | "status">;

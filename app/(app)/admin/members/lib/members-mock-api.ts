@@ -1,8 +1,8 @@
 import "server-only";
 
-import { Member } from "../types";
+import { PaginatedMembers } from "../types";
 import { fetchAdminMembers } from "./members-api";
 
-export async function fetchMembers(): Promise<Member[]> {
+export async function fetchMembers(): Promise<PaginatedMembers> {
   return fetchAdminMembers();
 }
