@@ -4,7 +4,7 @@ import { requireRole } from "@/app/lib/auth";
 
 import { type CreateMemberInput, type Member } from "../types";
 
-const DEFAULT_ADMIN_MEMBERS_ENDPOINT = "http://localhost:8000/api/v1/admin/members/";
+const DEFAULT_ADMIN_MEMBERS_ENDPOINT = "http://localhost:8000/api/v1/members/";
 
 type BackendMember = {
   id: string;

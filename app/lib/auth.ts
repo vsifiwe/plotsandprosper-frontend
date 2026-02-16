@@ -53,6 +53,7 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
     role: persistedSession.role,
     user: {
       name: persistedSession.userName,
+      email: persistedSession.userEmail,
       role: persistedSession.role,
     },
   };

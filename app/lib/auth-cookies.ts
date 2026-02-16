@@ -7,12 +7,14 @@ import { parseUserRole, type AuthSession, type UserRole } from "@/app/lib/auth-t
 export const AUTH_ACCESS_TOKEN_COOKIE = "pp_access_token";
 export const AUTH_REFRESH_TOKEN_COOKIE = "pp_refresh_token";
 export const AUTH_USER_NAME_COOKIE = "pp_user_name";
+export const AUTH_USER_EMAIL_COOKIE = "pp_user_email";
 export const AUTH_USER_ROLE_COOKIE = "pp_user_role";
 
 type PersistedAuthSession = {
   accessToken: string;
   refreshToken: string;
   userName: string;
+  userEmail: string;
   role: UserRole;
 };
 
@@ -32,6 +34,7 @@ export async function setAuthCookies(session: AuthSession): Promise<void> {
   cookieStore.set(AUTH_ACCESS_TOKEN_COOKIE, session.accessToken, options);
   cookieStore.set(AUTH_REFRESH_TOKEN_COOKIE, session.refreshToken, options);
   cookieStore.set(AUTH_USER_NAME_COOKIE, session.user.name, options);
+  cookieStore.set(AUTH_USER_EMAIL_COOKIE, session.user.email, options);
   cookieStore.set(AUTH_USER_ROLE_COOKIE, session.role, options);
 }
 
@@ -41,6 +44,7 @@ export async function clearAuthCookies(): Promise<void> {
   cookieStore.delete(AUTH_ACCESS_TOKEN_COOKIE);
   cookieStore.delete(AUTH_REFRESH_TOKEN_COOKIE);
   cookieStore.delete(AUTH_USER_NAME_COOKIE);
+  cookieStore.delete(AUTH_USER_EMAIL_COOKIE);
   cookieStore.delete(AUTH_USER_ROLE_COOKIE);
 }
 
@@ -50,6 +54,7 @@ export async function getAuthSessionFromCookies(): Promise<PersistedAuthSession 
   const accessToken = cookieStore.get(AUTH_ACCESS_TOKEN_COOKIE)?.value;
   const refreshToken = cookieStore.get(AUTH_REFRESH_TOKEN_COOKIE)?.value;
   const userName = cookieStore.get(AUTH_USER_NAME_COOKIE)?.value;
+  const userEmail = cookieStore.get(AUTH_USER_EMAIL_COOKIE)?.value;
   const roleValue = cookieStore.get(AUTH_USER_ROLE_COOKIE)?.value;
 
   if (!accessToken || !roleValue) {
@@ -65,6 +70,7 @@ export async function getAuthSessionFromCookies(): Promise<PersistedAuthSession 
     accessToken,
     refreshToken: refreshToken ?? "",
     userName: userName ?? "",
+    userEmail: userEmail ?? "",
     role,
   };
 }

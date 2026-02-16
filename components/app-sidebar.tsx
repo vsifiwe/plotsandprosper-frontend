@@ -39,6 +39,11 @@ type SidebarNavSection = {
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   role?: UserRole
+  user?: {
+    name: string
+    email: string
+    avatar?: string
+  }
 }
 
 const NAV_BY_ROLE: Record<UserRole, SidebarNavSection[]> = {
@@ -118,10 +123,13 @@ function isActivePath(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
-export function AppSidebar({ role = "member", ...props }: AppSidebarProps) {
+export function AppSidebar({ role = "member", user = { name: "", email: "" }, ...props }: AppSidebarProps) {
   const pathname = usePathname()
   const navSections = NAV_BY_ROLE[role]
   const homeHref = navSections[0]?.items[0]?.href ?? "/"
+
+  // Use provided user data or fall back to hardcoded data
+  const displayUser = user || USER_BY_ROLE[role]
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -165,7 +173,11 @@ export function AppSidebar({ role = "member", ...props }: AppSidebarProps) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={USER_BY_ROLE[role]} />
+        <NavUser user={{
+          name: displayUser.name ?? "",
+          email: displayUser.email,
+          avatar: displayUser.avatar ?? "/avatars/shadcn.jpg",
+        }} />
       </SidebarFooter>
     </Sidebar>
   )

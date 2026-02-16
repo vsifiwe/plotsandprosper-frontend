@@ -20,7 +20,14 @@ export default async function AppLayout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" role={session.role}/>
+      <AppSidebar
+        variant="inset"
+        role={session.role}
+        user={{
+          name: session.user.name,
+          email: session.user.email,
+        }}
+      />
       <SidebarInset>
         <div className="flex flex-1 flex-col">
           {children}
