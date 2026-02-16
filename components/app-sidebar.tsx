@@ -1,182 +1,128 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
+import type { UserRole } from "@/app/lib/auth-types"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
+import {
+  CommandIcon,
+  FileTextIcon,
+  LayoutDashboardIcon,
+  ListIcon,
+  UsersIcon,
+} from "lucide-react"
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
+type SidebarNavItem = {
+  title: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
+type SidebarNavSection = {
+  title?: string
+  items: SidebarNavItem[]
+}
+
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  role?: UserRole
+}
+
+const NAV_BY_ROLE: Record<UserRole, SidebarNavSection[]> = {
+  admin: [
     {
-      title: "Dashboard",
-      url: "#",
-      icon: (
-        <LayoutDashboardIcon
-        />
-      ),
-    },
-    {
-      title: "Lifecycle",
-      url: "#",
-      icon: (
-        <ListIcon
-        />
-      ),
-    },
-    {
-      title: "Analytics",
-      url: "#",
-      icon: (
-        <ChartBarIcon
-        />
-      ),
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: (
-        <FolderIcon
-        />
-      ),
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: (
-        <UsersIcon
-        />
-      ),
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: (
-        <CameraIcon
-        />
-      ),
-      isActive: true,
-      url: "#",
       items: [
         {
-          title: "Active Proposals",
-          url: "#",
+          title: "Dashboard",
+          href: "/admin/dashboard",
+          icon: LayoutDashboardIcon,
         },
         {
-          title: "Archived",
-          url: "#",
+          title: "Members",
+          href: "/admin/members",
+          icon: UsersIcon,
+        },
+        {
+          title: "Contribution Window",
+          href: "/admin/contribution-window",
+          icon: ListIcon,
+        },
+        {
+          title: "Contributions",
+          href: "/admin/contributions",
+          icon: FileTextIcon,
         },
       ],
     },
     {
-      title: "Proposal",
-      icon: (
-        <FileTextIcon
-        />
-      ),
-      url: "#",
+      title: "My Account",
       items: [
         {
-          title: "Active Proposals",
-          url: "#",
+          title: "Dashboard",
+          href: "/admin/my-account/dashboard",
+          icon: LayoutDashboardIcon,
         },
         {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: (
-        <FileTextIcon
-        />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
+          title: "Contributions",
+          href: "/admin/my-account/contributions",
+          icon: FileTextIcon,
         },
       ],
     },
   ],
-  navSecondary: [
+  member: [
     {
-      title: "Settings",
-      url: "#",
-      icon: (
-        <Settings2Icon
-        />
-      ),
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: (
-        <CircleHelpIcon
-        />
-      ),
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: (
-        <SearchIcon
-        />
-      ),
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: (
-        <DatabaseIcon
-        />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <FileChartColumnIcon
-        />
-      ),
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: (
-        <FileIcon
-        />
-      ),
+      items: [
+        {
+          title: "Dashboard",
+          href: "/member/dashboard",
+          icon: LayoutDashboardIcon,
+        },
+        {
+          title: "Contributions",
+          href: "/member/contributions",
+          icon: FileTextIcon,
+        },
+      ],
     },
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+const USER_BY_ROLE = {
+  admin: {
+    name: "Admin",
+    email: "admin@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+  member: {
+    name: "Member",
+    email: "member@example.com",
+    avatar: "/avatars/shadcn.jpg",
+  },
+} as const
+
+function isActivePath(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
+export function AppSidebar({ role = "member", ...props }: AppSidebarProps) {
+  const pathname = usePathname()
+  const navSections = NAV_BY_ROLE[role]
+  const homeHref = navSections[0]?.items[0]?.href ?? "/"
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -186,21 +132,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="#">
+              <Link href={homeHref}>
                 <CommandIcon className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
+                <span className="text-base font-semibold">Plots & Prosper</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {navSections.map((section, sectionIndex) => (
+          <SidebarGroup key={`${section.title ?? "main"}-${sectionIndex}`}>
+            {section.title ? <SidebarGroupLabel>{section.title}</SidebarGroupLabel> : null}
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => {
+                  const Icon = item.icon
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton asChild isActive={isActivePath(pathname, item.href)}>
+                        <Link href={item.href}>
+                          <Icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={USER_BY_ROLE[role]} />
       </SidebarFooter>
     </Sidebar>
   )
