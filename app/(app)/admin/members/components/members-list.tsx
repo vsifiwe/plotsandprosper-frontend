@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/table";
 
 import { Member, MemberStatus } from "../types";
+import { Badge } from "@/components/ui/badge";
+import { CircleCheckIcon, LoaderIcon } from "lucide-react";
 
 type MembersListProps = {
   members: Member[];
@@ -21,12 +23,24 @@ function statusClasses(status: MemberStatus) {
 
 function StatusBadge({ status }: { status: MemberStatus }) {
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusClasses(status)}`}
-    >
-      {status}
-    </span>
+    <Badge variant="outline" className="text-muted-foreground px-1.5">
+        {status === "ACTIVE" ? (
+          <CircleCheckIcon className="fill-green-500 dark:fill-green-400" />
+        ) : (
+          <LoaderIcon
+          />
+        )}
+        {status}
+      </Badge>
   );
+}
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
 }
 
 export function MembersList({ members }: MembersListProps) {
@@ -64,7 +78,7 @@ export function MembersList({ members }: MembersListProps) {
               </div>
               <div>
                 <dt className="text-zinc-500">Join date</dt>
-                <dd>{member.joinDate}</dd>
+                <dd>{formatDate(member.joinDate)}</dd>
               </div>
             </dl>
           </article>
@@ -95,7 +109,7 @@ export function MembersList({ members }: MembersListProps) {
                 <TableCell>
                   <StatusBadge status={member.status} />
                 </TableCell>
-                <TableCell>{member.joinDate}</TableCell>
+                <TableCell>{formatDate(member.joinDate)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
