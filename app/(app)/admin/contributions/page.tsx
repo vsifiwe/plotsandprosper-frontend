@@ -6,6 +6,17 @@ import {
   type ContributionStatus,
   fetchContributions,
 } from "@/app/(app)/admin/contributions/lib/contributions-api";
+import { AddContributionDialog } from "@/app/(app)/admin/contributions/components/add-contribution-dialog";
+import {
+  ContributionWindowsApiError,
+  fetchContributionWindows,
+} from "@/app/(app)/admin/contribution-window/lib/contribution-windows-api";
+import { type ContributionWindow } from "@/app/(app)/admin/contribution-window/types";
+import {
+  fetchAdminMembers,
+  MembersApiError,
+} from "@/app/(app)/admin/members/lib/members-api";
+import { type Member } from "@/app/(app)/admin/members/types";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -18,6 +29,8 @@ import {
 
 
 export const dynamic = "force-dynamic";
+const MAX_PAGES_TO_FETCH = 100;
+const WINDOWS_PAGE_SIZE = 100;
 
 // Rwandan Franc (RWF): no decimals, comma thousands separator, symbol after number (e.g. 1,000,000 RWF)
 const rwfNumberFormat = new Intl.NumberFormat("en-US", {
@@ -35,6 +48,16 @@ type SearchParams = {
 
 type AdminContributionsPageProps = {
   searchParams?: Promise<SearchParams>;
+};
+
+type ContributionMemberOption = {
+  id: string;
+  name: string;
+};
+
+type ContributionWindowOption = {
+  id: number;
+  name: string;
 };
 
 function statusClassName(status: ContributionStatus): string {
@@ -64,6 +87,39 @@ function formatDate(value: string): string {
   });
 }
 
+async function fetchAllMembers(): Promise<Member[]> {
+  const members: Member[] = [];
+
+  for (let page = 1; page <= MAX_PAGES_TO_FETCH; page += 1) {
+    const response = await fetchAdminMembers(page);
+    members.push(...response.results);
+
+    if (!response.next) {
+      break;
+    }
+  }
+
+  return members;
+}
+
+async function fetchAllContributionWindows(): Promise<ContributionWindow[]> {
+  const windows: ContributionWindow[] = [];
+
+  for (let page = 1; page <= MAX_PAGES_TO_FETCH; page += 1) {
+    const response = await fetchContributionWindows({
+      page,
+      pageSize: WINDOWS_PAGE_SIZE,
+    });
+    windows.push(...response.results);
+
+    if (!response.next) {
+      break;
+    }
+  }
+
+  return windows;
+}
+
 export default async function AdminContributionsPage({
   searchParams,
 }: AdminContributionsPageProps) {
@@ -77,12 +133,16 @@ export default async function AdminContributionsPage({
   let hasPreviousPage = false;
   let hasNextPage = false;
   let loadError: string | null = null;
+  let optionsLoadError: string | null = null;
+  let memberOptions: ContributionMemberOption[] = [];
+  let windowOptions: ContributionWindowOption[] = [];
 
   try {
     const contributionsPage = await fetchContributions({
       page: currentPage,
       pageSize: CONTRIBUTIONS_PAGE_SIZE,
     });
+
     pageContributions = contributionsPage.results;
     totalContributions = contributionsPage.count;
     hasPreviousPage = contributionsPage.previous !== null;
@@ -92,6 +152,33 @@ export default async function AdminContributionsPage({
       loadError = error.message;
     } else {
       loadError = "Unable to load contributions at the moment.";
+    }
+  }
+
+  try {
+    const [members, windows] = await Promise.all([
+      fetchAllMembers(),
+      fetchAllContributionWindows(),
+    ]);
+
+    memberOptions = members
+      .map((member) => ({
+        id: member.id,
+        name: `${member.firstName} ${member.lastName}`,
+      }))
+      .toSorted((first, second) => first.name.localeCompare(second.name));
+
+    windowOptions = windows
+      .map((window) => ({ id: window.id, name: window.name }))
+      .toSorted((first, second) => first.name.localeCompare(second.name));
+  } catch (error) {
+    if (
+      error instanceof MembersApiError ||
+      error instanceof ContributionWindowsApiError
+    ) {
+      optionsLoadError = error.message;
+    } else {
+      optionsLoadError = "Unable to load contribution form options at the moment.";
     }
   }
 
@@ -109,9 +196,11 @@ export default async function AdminContributionsPage({
   return (
     <main className="space-y-5">
       <div className="flex flex-col items-start gap-3">
-        <Button asChild size="sm">
-          <Link href="/admin/contributions/new">Log new contribution</Link>
-        </Button>
+        <AddContributionDialog
+          members={memberOptions}
+          windows={windowOptions}
+          optionsLoadError={optionsLoadError}
+        />
         <div>
           <h2 className="text-xl font-semibold">Contributions</h2>
           <p className="text-sm text-zinc-600">
@@ -175,7 +264,6 @@ export default async function AdminContributionsPage({
               <TableHeader>
                 <TableRow>
                   <TableHead>Member</TableHead>
-                  <TableHead>Member ID</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Contribution window</TableHead>
                   <TableHead>Receipt number</TableHead>
@@ -187,7 +275,6 @@ export default async function AdminContributionsPage({
                 {pageContributions.map((contribution) => (
                   <TableRow key={contribution.id}>
                     <TableCell>{contribution.memberName}</TableCell>
-                    <TableCell>{contribution.memberId}</TableCell>
                     <TableCell>{formatRwf(contribution.amount)}</TableCell>
                     <TableCell>{contribution.contributionWindowName ?? "-"}</TableCell>
                     <TableCell>{contribution.receiptNumber}</TableCell>
