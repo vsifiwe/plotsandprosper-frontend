@@ -1,9 +1,11 @@
 import Link from "next/link";
 
 import {
-  fetchContributions,
+  CONTRIBUTIONS_PAGE_SIZE,
+  ContributionsApiError,
   type ContributionStatus,
-} from "@/app/(app)/admin/contributions/lib/contributions-mock-api";
+  fetchContributions,
+} from "@/app/(app)/admin/contributions/lib/contributions-api";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -14,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-const CONTRIBUTIONS_PER_PAGE = 10;
+
 export const dynamic = "force-dynamic";
 
 // Rwandan Franc (RWF): no decimals, comma thousands separator, symbol after number (e.g. 1,000,000 RWF)
@@ -65,24 +67,44 @@ function formatDate(value: string): string {
 export default async function AdminContributionsPage({
   searchParams,
 }: AdminContributionsPageProps) {
-  const contributionsPromise = fetchContributions();
   const resolvedSearchParams = (await searchParams) ?? {};
-  const allContributions = await contributionsPromise;
   const currentPage = parsePageNumber(resolvedSearchParams.page);
-  const totalContributions = allContributions.length;
+
+  let pageContributions: Awaited<
+    ReturnType<typeof fetchContributions>
+  >["results"] = [];
+  let totalContributions = 0;
+  let hasPreviousPage = false;
+  let hasNextPage = false;
+  let loadError: string | null = null;
+
+  try {
+    const contributionsPage = await fetchContributions({
+      page: currentPage,
+      pageSize: CONTRIBUTIONS_PAGE_SIZE,
+    });
+    pageContributions = contributionsPage.results;
+    totalContributions = contributionsPage.count;
+    hasPreviousPage = contributionsPage.previous !== null;
+    hasNextPage = contributionsPage.next !== null;
+  } catch (error) {
+    if (error instanceof ContributionsApiError) {
+      loadError = error.message;
+    } else {
+      loadError = "Unable to load contributions at the moment.";
+    }
+  }
+
   const totalPages = Math.max(
     1,
-    Math.ceil(totalContributions / CONTRIBUTIONS_PER_PAGE)
+    Math.ceil(totalContributions / CONTRIBUTIONS_PAGE_SIZE)
   );
   const safePage = Math.min(currentPage, totalPages);
-  const startIndex = (safePage - 1) * CONTRIBUTIONS_PER_PAGE;
-  const endIndex = startIndex + CONTRIBUTIONS_PER_PAGE;
-  const pageContributions = allContributions.slice(startIndex, endIndex);
+  const startIndex = (safePage - 1) * CONTRIBUTIONS_PAGE_SIZE;
+  const endIndex = startIndex + CONTRIBUTIONS_PAGE_SIZE;
   const firstContributionIndex = totalContributions === 0 ? 0 : startIndex + 1;
-  const lastContributionIndex = startIndex + pageContributions.length;
+  const lastContributionIndex = Math.min(endIndex, totalContributions);
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
-  const hasPreviousPage = safePage > 1;
-  const hasNextPage = safePage < totalPages;
 
   return (
     <main className="space-y-5">
@@ -98,11 +120,17 @@ export default async function AdminContributionsPage({
         </div>
       </div>
 
-      {pageContributions.length === 0 ? (
+      {loadError ? (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {loadError}
+        </div>
+      ) : null}
+
+      {!loadError && pageContributions.length === 0 ? (
         <div className="rounded-md border py-8 text-center text-sm text-zinc-600">
           No contributions found.
         </div>
-      ) : (
+      ) : !loadError ? (
         <>
           <div className="space-y-3 md:hidden">
             {pageContributions.map((contribution) => (
@@ -113,7 +141,6 @@ export default async function AdminContributionsPage({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-semibold">{contribution.memberName}</h3>
-                    <p className="text-xs text-zinc-500">{contribution.memberId}</p>
                   </div>
                   <span
                     className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusClassName(contribution.status)}`}
@@ -127,8 +154,8 @@ export default async function AdminContributionsPage({
                     <dd>{formatRwf(contribution.amount)}</dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Method</dt>
-                    <dd>{contribution.method}</dd>
+                    <dt className="text-zinc-500">Contribution window</dt>
+                    <dd>{contribution.contributionWindowName ?? "-"}</dd>
                   </div>
                   <div>
                     <dt className="text-zinc-500">Receipt</dt>
@@ -150,7 +177,7 @@ export default async function AdminContributionsPage({
                   <TableHead>Member</TableHead>
                   <TableHead>Member ID</TableHead>
                   <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
+                  <TableHead>Contribution window</TableHead>
                   <TableHead>Receipt number</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Received on</TableHead>
@@ -162,7 +189,7 @@ export default async function AdminContributionsPage({
                     <TableCell>{contribution.memberName}</TableCell>
                     <TableCell>{contribution.memberId}</TableCell>
                     <TableCell>{formatRwf(contribution.amount)}</TableCell>
-                    <TableCell>{contribution.method}</TableCell>
+                    <TableCell>{contribution.contributionWindowName ?? "-"}</TableCell>
                     <TableCell>{contribution.receiptNumber}</TableCell>
                     <TableCell>
                       <span
@@ -221,7 +248,7 @@ export default async function AdminContributionsPage({
             </div>
           </div>
         </>
-      )}
+      ) : null}
     </main>
   );
 }
