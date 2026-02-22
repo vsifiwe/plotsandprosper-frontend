@@ -70,6 +70,11 @@ const NAV_BY_ROLE: Record<UserRole, SidebarNavSection[]> = {
           href: "/admin/contributions",
           icon: FileTextIcon,
         },
+        {
+          title: "Investments",
+          href: "/admin/investments",
+          icon: FileTextIcon,
+        },
       ],
     },
     {
