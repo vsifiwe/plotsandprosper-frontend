@@ -49,7 +49,7 @@ export async function createInvestmentAction(
     const investment = await createAdminInvestment(
       parsed.data satisfies CreateInvestmentInput
     );
-    revalidatePath("/admin/investments");
+    revalidatePath("/admin/investment-accounts");
 
     return {
       ok: true,

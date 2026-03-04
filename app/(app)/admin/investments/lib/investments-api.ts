@@ -9,7 +9,7 @@ import {
 } from "../types";
 
 const DEFAULT_ADMIN_INVESTMENTS_ENDPOINT =
-  "http://localhost:8000/api/v1/investments/";
+  "http://localhost:8000/api/v1/investment-accounts/";
 export const ADMIN_INVESTMENTS_PAGE_SIZE = 10;
 
 type BackendInvestment = {
@@ -48,6 +48,7 @@ function getAdminInvestmentsEndpoint(): string {
 
 function createAdminInvestmentsUrl(page: number): string {
   const endpoint = getAdminInvestmentsEndpoint();
+  console.log("endpoint", endpoint);
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 
   try {
@@ -173,6 +174,8 @@ function mapCreateInvestmentInputToPayload(
 
 export async function fetchAdminInvestments(page = 1): Promise<PaginatedInvestments> {
   const session = await requireRole("admin");
+
+  console.log("createAdminInvestmentsUrl", createAdminInvestmentsUrl(page));
 
   let response: Response;
   try {

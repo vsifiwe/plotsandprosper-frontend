@@ -20,8 +20,8 @@ type AdminInvestmentsClientProps = {
 };
 
 function pageHref(pageNumber: number): string {
-  if (pageNumber <= 1) return "/admin/investments";
-  return `/admin/investments?page=${pageNumber}`;
+  if (pageNumber <= 1) return "/admin/investment-accounts";
+  return `/admin/investment-accounts?page=${pageNumber}`;
 }
 
 export function AdminInvestmentsClient({
