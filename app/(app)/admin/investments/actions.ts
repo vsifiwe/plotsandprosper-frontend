@@ -5,12 +5,16 @@ import { z } from "zod";
 
 import {
   createAdminInvestment,
+  createFundReallocation,
+  createInvestmentEvent,
   InvestmentsApiError,
 } from "./lib/investments-api";
 import {
   INVESTMENT_VEHICLE_TYPES,
   type CreateInvestmentInput,
+  type InvestFundsInput,
   type Investment,
+  type ReallocateFundsInput,
 } from "./types";
 
 const createInvestmentSchema = z.object({
@@ -67,5 +71,74 @@ export async function createInvestmentAction(
       ok: false,
       message: "Unable to create investment at the moment.",
     };
+  }
+}
+
+const investFundsSchema = z.object({
+  shares: z.string().trim().min(1, "Shares is required."),
+  sharePrice: z.string().trim().min(1, "Share price is required."),
+  investmentVehicle: z.number().int().positive("Investment vehicle is required."),
+  notes: z.string().trim().max(2000).default(""),
+});
+
+export type InvestFundsResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export async function investFundsAction(
+  input: unknown
+): Promise<InvestFundsResult> {
+  const parsed = investFundsSchema.safeParse(input);
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0];
+    return {
+      ok: false,
+      message: firstError?.message || "Please check your input.",
+    };
+  }
+
+  try {
+    await createInvestmentEvent(parsed.data satisfies InvestFundsInput);
+    revalidatePath("/admin/investment-accounts");
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof InvestmentsApiError) {
+      return { ok: false, message: error.message };
+    }
+    return { ok: false, message: "Unable to invest funds at the moment." };
+  }
+}
+
+const reallocateFundsSchema = z.object({
+  sourceVehicle: z.number().int().positive("Source vehicle is required."),
+  destinationVehicle: z.number().int().positive("Destination vehicle is required."),
+  amount: z.string().trim().min(1, "Amount is required."),
+});
+
+export type ReallocateFundsResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+export async function reallocateFundsAction(
+  input: unknown
+): Promise<ReallocateFundsResult> {
+  const parsed = reallocateFundsSchema.safeParse(input);
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0];
+    return {
+      ok: false,
+      message: firstError?.message || "Please check your input.",
+    };
+  }
+
+  try {
+    await createFundReallocation(parsed.data satisfies ReallocateFundsInput);
+    revalidatePath("/admin/investment-accounts");
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof InvestmentsApiError) {
+      return { ok: false, message: error.message };
+    }
+    return { ok: false, message: "Unable to reallocate funds at the moment." };
   }
 }

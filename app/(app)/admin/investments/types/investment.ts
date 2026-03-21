@@ -12,6 +12,7 @@ export type Investment = {
   id: number;
   name: string;
   vehicleType: InvestmentVehicleType | (string & {});
+  currentValue: string;
   description: string;
   createdAt: string;
   updatedAt: string;
@@ -28,6 +29,19 @@ export type CreateInvestmentInput = {
   name: string;
   vehicleType: InvestmentVehicleType;
   description: string;
+};
+
+export type InvestFundsInput = {
+  shares: string;
+  sharePrice: string;
+  investmentVehicle: number;
+  notes: string;
+};
+
+export type ReallocateFundsInput = {
+  sourceVehicle: number;
+  destinationVehicle: number;
+  amount: string;
 };
 
 export function formatVehicleType(vehicleType: string): string {

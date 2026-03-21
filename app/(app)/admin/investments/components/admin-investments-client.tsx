@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { createInvestmentAction } from "../actions";
+import { createInvestmentAction, investFundsAction, reallocateFundsAction } from "../actions";
 import { AddInvestmentDialog } from "../forms/add-investment-dialog";
+import { InvestFundsDialog } from "../forms/invest-funds-dialog";
+import { ReallocateFundsDialog } from "../forms/reallocate-funds-dialog";
 import { InvestmentsList } from "./investments-list";
-import { type CreateInvestmentInput, type Investment } from "../types";
+import { type CreateInvestmentInput, type InvestFundsInput, type Investment, type ReallocateFundsInput } from "../types";
 import { Button } from "@/components/ui/button";
 
 type AdminInvestmentsClientProps = {
@@ -34,6 +36,8 @@ export function AdminInvestmentsClient({
 }: AdminInvestmentsClientProps) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const [isInvesting, setIsInvesting] = useState(false);
+  const [isReallocating, setIsReallocating] = useState(false);
 
   const handleCreateInvestment = async (investmentData: CreateInvestmentInput) => {
     setIsSaving(true);
@@ -50,6 +54,36 @@ export function AdminInvestmentsClient({
     }
   };
 
+  const handleInvestFunds = async (input: InvestFundsInput) => {
+    setIsInvesting(true);
+
+    try {
+      const result = await investFundsAction(input);
+      if (!result.ok) {
+        throw new Error(result.message);
+      }
+
+      router.refresh();
+    } finally {
+      setIsInvesting(false);
+    }
+  };
+
+  const handleReallocateFunds = async (input: ReallocateFundsInput) => {
+    setIsReallocating(true);
+
+    try {
+      const result = await reallocateFundsAction(input);
+      if (!result.ok) {
+        throw new Error(result.message);
+      }
+
+      router.refresh();
+    } finally {
+      setIsReallocating(false);
+    }
+  };
+
   return (
     <main className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -59,10 +93,22 @@ export function AdminInvestmentsClient({
             Manage all investment vehicles and allocations
           </p>
         </div>
-        <AddInvestmentDialog
-          isSaving={isSaving}
-          onSubmit={handleCreateInvestment}
-        />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <InvestFundsDialog
+            investments={initialInvestments}
+            isSaving={isInvesting}
+            onSubmit={handleInvestFunds}
+          />
+          <ReallocateFundsDialog
+            investments={initialInvestments}
+            isSaving={isReallocating}
+            onSubmit={handleReallocateFunds}
+          />
+          <AddInvestmentDialog
+            isSaving={isSaving}
+            onSubmit={handleCreateInvestment}
+          />
+        </div>
       </div>
 
       {loadError ? (

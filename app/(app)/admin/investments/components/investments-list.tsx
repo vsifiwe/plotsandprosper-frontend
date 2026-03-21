@@ -9,6 +9,16 @@ import {
 
 import { formatVehicleType, type Investment } from "../types";
 
+function formatCurrency(value: string) {
+  const num = parseFloat(value);
+  if (Number.isNaN(num)) return value;
+  return (
+    new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: 0,
+    }).format(num) + " RWF"
+  );
+}
+
 type InvestmentsListProps = {
   investments: Investment[];
 };
@@ -44,6 +54,10 @@ export function InvestmentsList({ investments }: InvestmentsListProps) {
                 <dd>{formatVehicleType(investment.vehicleType)}</dd>
               </div>
               <div>
+                <dt className="text-zinc-500">Current value</dt>
+                <dd>{formatCurrency(investment.currentValue)}</dd>
+              </div>
+              <div>
                 <dt className="text-zinc-500">Description</dt>
                 <dd>{investment.description}</dd>
               </div>
@@ -62,6 +76,7 @@ export function InvestmentsList({ investments }: InvestmentsListProps) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Vehicle type</TableHead>
+              <TableHead>Current value</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Created</TableHead>
             </TableRow>
@@ -71,6 +86,7 @@ export function InvestmentsList({ investments }: InvestmentsListProps) {
               <TableRow key={investment.id}>
                 <TableCell className="font-medium">{investment.name}</TableCell>
                 <TableCell>{formatVehicleType(investment.vehicleType)}</TableCell>
+                <TableCell>{formatCurrency(investment.currentValue)}</TableCell>
                 <TableCell>{investment.description}</TableCell>
                 <TableCell>{formatDate(investment.createdAt)}</TableCell>
               </TableRow>

@@ -4,18 +4,25 @@ import { requireRole } from "@/app/lib/auth";
 
 import {
   type CreateInvestmentInput,
+  type InvestFundsInput,
   type Investment,
   type PaginatedInvestments,
+  type ReallocateFundsInput,
 } from "../types";
 
 const DEFAULT_ADMIN_INVESTMENTS_ENDPOINT =
   "http://localhost:8000/api/v1/investment-accounts/";
+const DEFAULT_INVESTMENT_EVENTS_ENDPOINT =
+  "http://localhost:8000/api/v1/investment-events/";
+const DEFAULT_FUND_REALLOCATIONS_ENDPOINT =
+  "http://localhost:8000/api/v1/fund-reallocations/";
 export const ADMIN_INVESTMENTS_PAGE_SIZE = 10;
 
 type BackendInvestment = {
   id: number;
   name: string;
   vehicle_type: string;
+  current_value: string;
   description: string;
   created_at: string;
   updated_at: string;
@@ -48,7 +55,6 @@ function getAdminInvestmentsEndpoint(): string {
 
 function createAdminInvestmentsUrl(page: number): string {
   const endpoint = getAdminInvestmentsEndpoint();
-  console.log("endpoint", endpoint);
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
 
   try {
@@ -73,6 +79,7 @@ function parseBackendInvestment(payload: unknown): Investment | null {
     typeof backendInvestment.name !== "string" ||
     typeof backendInvestment.vehicle_type !== "string" ||
     typeof backendInvestment.description !== "string" ||
+    typeof backendInvestment.current_value !== "string" ||
     typeof backendInvestment.created_at !== "string" ||
     typeof backendInvestment.updated_at !== "string"
   ) {
@@ -83,6 +90,7 @@ function parseBackendInvestment(payload: unknown): Investment | null {
     id: backendInvestment.id,
     name: backendInvestment.name,
     vehicleType: backendInvestment.vehicle_type,
+    currentValue: backendInvestment.current_value,
     description: backendInvestment.description,
     createdAt: backendInvestment.created_at,
     updatedAt: backendInvestment.updated_at,
@@ -283,4 +291,129 @@ export async function createAdminInvestment(
   }
 
   return createdInvestment;
+}
+
+function getInvestmentEventsEndpoint(): string {
+  const configuredEndpoint = process.env.BACKEND_INVESTMENT_EVENTS_ENDPOINT?.trim();
+  if (configuredEndpoint && configuredEndpoint.length > 0) {
+    return configuredEndpoint;
+  }
+
+  return DEFAULT_INVESTMENT_EVENTS_ENDPOINT;
+}
+
+export async function createInvestmentEvent(
+  input: InvestFundsInput
+): Promise<void> {
+  const session = await requireRole("admin");
+
+  const body = {
+    shares: input.shares,
+    share_price: input.sharePrice,
+    investment_vehicle: input.investmentVehicle,
+    notes: input.notes,
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(getInvestmentEventsEndpoint(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch {
+    throw new InvestmentsApiError(
+      "Unable to reach the investments service. Please try again.",
+      0
+    );
+  }
+
+  if (!response.ok) {
+    let payload: unknown = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new InvestmentsApiError(
+        "Your session is no longer valid. Please sign in again.",
+        response.status
+      );
+    }
+
+    const backendMessage = extractErrorMessage(payload);
+    throw new InvestmentsApiError(
+      backendMessage ?? "Unable to invest funds at the moment.",
+      response.status
+    );
+  }
+}
+
+function getFundReallocationsEndpoint(): string {
+  const configuredEndpoint = process.env.BACKEND_FUND_REALLOCATIONS_ENDPOINT?.trim();
+  if (configuredEndpoint && configuredEndpoint.length > 0) {
+    return configuredEndpoint;
+  }
+
+  return DEFAULT_FUND_REALLOCATIONS_ENDPOINT;
+}
+
+export async function createFundReallocation(
+  input: ReallocateFundsInput
+): Promise<void> {
+  const session = await requireRole("admin");
+
+  const body = {
+    source_vehicle: String(input.sourceVehicle),
+    destination_vehicle: String(input.destinationVehicle),
+    amount: input.amount,
+  };
+
+  let response: Response;
+  try {
+    response = await fetch(getFundReallocationsEndpoint(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch {
+    throw new InvestmentsApiError(
+      "Unable to reach the investments service. Please try again.",
+      0
+    );
+  }
+
+  if (!response.ok) {
+    let payload: unknown = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new InvestmentsApiError(
+        "Your session is no longer valid. Please sign in again.",
+        response.status
+      );
+    }
+
+    const backendMessage = extractErrorMessage(payload);
+    throw new InvestmentsApiError(
+      backendMessage ?? "Unable to reallocate funds at the moment.",
+      response.status
+    );
+  }
 }
