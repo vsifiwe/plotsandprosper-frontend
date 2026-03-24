@@ -5,6 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import { MemberSummaryCards } from "./components/member-summary-cards";
 import { TransactionsList } from "./components/transactions-list";
+import { InvestmentsList } from "./components/investments-list";
 import {
   fetchMemberTransactions,
   TransactionsApiError,
@@ -13,7 +14,11 @@ import {
   fetchMemberSummary,
   SummaryApiError,
 } from "./lib/summary-api";
-import type { MemberSummary, Transaction } from "./types";
+import {
+  fetchMemberInvestments,
+  InvestmentsApiError,
+} from "./lib/investments-api";
+import type { MemberSummary, Transaction, Investment } from "./types";
 
 type SearchParams = {
   page?: string | string[];
@@ -55,10 +60,15 @@ export default async function MemberDashboardPage({
   let hasPreviousPage = false;
   let transactionsError: string | null = null;
 
-  const [summaryResult, transactionsResult] = await Promise.allSettled([
-    fetchMemberSummary(),
-    fetchMemberTransactions(currentPage),
-  ]);
+  let investments: Investment[] = [];
+  let investmentsError: string | null = null;
+
+  const [summaryResult, transactionsResult, investmentsResult] =
+    await Promise.allSettled([
+      fetchMemberSummary(),
+      fetchMemberTransactions(currentPage),
+      fetchMemberInvestments(),
+    ]);
 
   if (summaryResult.status === "fulfilled") {
     summary = summaryResult.value;
@@ -83,6 +93,16 @@ export default async function MemberDashboardPage({
       error instanceof TransactionsApiError
         ? error.message
         : "Unable to load transactions at the moment.";
+  }
+
+  if (investmentsResult.status === "fulfilled") {
+    investments = investmentsResult.value;
+  } else {
+    const error = investmentsResult.reason;
+    investmentsError =
+      error instanceof InvestmentsApiError
+        ? error.message
+        : "Unable to load investments at the moment.";
   }
 
   function pageHref(pageNumber: number): string {
@@ -150,6 +170,16 @@ export default async function MemberDashboardPage({
               </div>
             </div>
           ) : null}
+
+          {investmentsError ? (
+            <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {investmentsError}
+            </div>
+          ) : null}
+
+          <div className="mt-4">
+            <InvestmentsList investments={investments} />
+          </div>
         </div>
       </div>
     </main>

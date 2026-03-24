@@ -15,6 +15,22 @@ export type PaginatedTransactions = {
   results: Transaction[];
 };
 
+export type VehicleType =
+  | "LAND"
+  | "SHARES"
+  | "SAVINGS_ACCOUNT"
+  | "TREASURY_BOND"
+  | "FIXED_DEPOSIT"
+  | "OTHER";
+
+export type Investment = {
+  id: number;
+  name: string;
+  vehicleType: VehicleType;
+  currentValue: string;
+  description: string;
+};
+
 export type SummaryMetric = {
   amount: string;
   growth: string;
