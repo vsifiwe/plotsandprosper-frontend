@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { ArrowRightLeft, LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +26,8 @@ import {
 import { type Investment, type ReallocateFundsInput } from "../types";
 
 type ReallocateFundsDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   investments: Investment[];
   isSaving: boolean;
   onSubmit: (input: ReallocateFundsInput) => Promise<void>;
@@ -45,11 +46,12 @@ const INITIAL_FORM_STATE: ReallocateFundsFormState = {
 };
 
 export function ReallocateFundsDialog({
+  open,
+  onOpenChange,
   investments,
   isSaving,
   onSubmit,
 }: ReallocateFundsDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [formState, setFormState] =
     useState<ReallocateFundsFormState>(INITIAL_FORM_STATE);
@@ -59,9 +61,9 @@ export function ReallocateFundsDialog({
     setSubmitError(null);
   };
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open && !isSaving) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen && !isSaving) {
       resetForm();
     }
   };
@@ -95,7 +97,7 @@ export function ReallocateFundsDialog({
         amount: formState.amount.trim(),
       });
 
-      setIsOpen(false);
+      onOpenChange(false);
       resetForm();
     } catch (error) {
       setSubmitError(
@@ -107,14 +109,7 @@ export function ReallocateFundsDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full sm:w-auto">
-          <ArrowRightLeft />
-          Reallocate Funds
-        </Button>
-      </DialogTrigger>
-
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Reallocate Funds</DialogTitle>

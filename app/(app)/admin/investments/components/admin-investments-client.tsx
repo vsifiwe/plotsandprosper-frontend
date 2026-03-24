@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowRightLeft, ChevronDown, DollarSign, Plus } from "lucide-react";
 
 import { createInvestmentAction, investFundsAction, reallocateFundsAction } from "../actions";
 import { AddInvestmentDialog } from "../forms/add-investment-dialog";
@@ -11,6 +12,12 @@ import { ReallocateFundsDialog } from "../forms/reallocate-funds-dialog";
 import { InvestmentsList } from "./investments-list";
 import { type CreateInvestmentInput, type InvestFundsInput, type Investment, type ReallocateFundsInput } from "../types";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type AdminInvestmentsClientProps = {
   initialInvestments: Investment[];
@@ -38,6 +45,10 @@ export function AdminInvestmentsClient({
   const [isSaving, setIsSaving] = useState(false);
   const [isInvesting, setIsInvesting] = useState(false);
   const [isReallocating, setIsReallocating] = useState(false);
+
+  const [investOpen, setInvestOpen] = useState(false);
+  const [reallocateOpen, setReallocateOpen] = useState(false);
+  const [addInvestmentOpen, setAddInvestmentOpen] = useState(false);
 
   const handleCreateInvestment = async (investmentData: CreateInvestmentInput) => {
     setIsSaving(true);
@@ -93,21 +104,30 @@ export function AdminInvestmentsClient({
             Manage all investment vehicles and allocations
           </p>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <InvestFundsDialog
-            investments={initialInvestments}
-            isSaving={isInvesting}
-            onSubmit={handleInvestFunds}
-          />
-          <ReallocateFundsDialog
-            investments={initialInvestments}
-            isSaving={isReallocating}
-            onSubmit={handleReallocateFunds}
-          />
-          <AddInvestmentDialog
-            isSaving={isSaving}
-            onSubmit={handleCreateInvestment}
-          />
+
+        <div className="flex items-center gap-2">
+          <Button onClick={() => setInvestOpen(true)} className="w-full sm:w-auto">
+            <DollarSign />
+            Invest Funds
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onSelect={() => setReallocateOpen(true)}>
+                <ArrowRightLeft />
+                Reallocate Funds
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setAddInvestmentOpen(true)}>
+                <Plus />
+                Add Investment Vehicle
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -150,6 +170,27 @@ export function AdminInvestmentsClient({
           </div>
         </div>
       ) : null}
+
+      <InvestFundsDialog
+        open={investOpen}
+        onOpenChange={setInvestOpen}
+        investments={initialInvestments}
+        isSaving={isInvesting}
+        onSubmit={handleInvestFunds}
+      />
+      <ReallocateFundsDialog
+        open={reallocateOpen}
+        onOpenChange={setReallocateOpen}
+        investments={initialInvestments}
+        isSaving={isReallocating}
+        onSubmit={handleReallocateFunds}
+      />
+      <AddInvestmentDialog
+        open={addInvestmentOpen}
+        onOpenChange={setAddInvestmentOpen}
+        isSaving={isSaving}
+        onSubmit={handleCreateInvestment}
+      />
     </main>
   );
 }

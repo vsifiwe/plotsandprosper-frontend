@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { LoaderCircle, Plus } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +32,8 @@ import {
 } from "../types";
 
 type AddInvestmentDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   isSaving: boolean;
   onSubmit: (investment: CreateInvestmentInput) => Promise<void>;
 };
@@ -50,10 +51,11 @@ const INITIAL_FORM_STATE: InvestmentFormState = {
 };
 
 export function AddInvestmentDialog({
+  open,
+  onOpenChange,
   isSaving,
   onSubmit,
 }: AddInvestmentDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [formState, setFormState] = useState<InvestmentFormState>(
     INITIAL_FORM_STATE
@@ -64,9 +66,9 @@ export function AddInvestmentDialog({
     setSubmitError(null);
   };
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open && !isSaving) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen && !isSaving) {
       resetForm();
     }
   };
@@ -82,7 +84,7 @@ export function AddInvestmentDialog({
         description: formState.description.trim(),
       });
 
-      setIsOpen(false);
+      onOpenChange(false);
       resetForm();
     } catch (error) {
       setSubmitError(
@@ -94,14 +96,7 @@ export function AddInvestmentDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="w-full sm:w-auto">
-          <Plus />
-          Add Investment
-        </Button>
-      </DialogTrigger>
-
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Add Investment</DialogTitle>

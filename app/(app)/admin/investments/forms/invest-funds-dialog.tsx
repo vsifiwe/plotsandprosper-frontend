@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { DollarSign, LoaderCircle } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +27,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { type InvestFundsInput, type Investment } from "../types";
 
 type InvestFundsDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   investments: Investment[];
   isSaving: boolean;
   onSubmit: (input: InvestFundsInput) => Promise<void>;
@@ -48,11 +49,12 @@ const INITIAL_FORM_STATE: InvestFundsFormState = {
 };
 
 export function InvestFundsDialog({
+  open,
+  onOpenChange,
   investments,
   isSaving,
   onSubmit,
 }: InvestFundsDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [formState, setFormState] =
     useState<InvestFundsFormState>(INITIAL_FORM_STATE);
@@ -62,9 +64,9 @@ export function InvestFundsDialog({
     setSubmitError(null);
   };
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open && !isSaving) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen && !isSaving) {
       resetForm();
     }
   };
@@ -87,7 +89,7 @@ export function InvestFundsDialog({
         notes: formState.notes.trim(),
       });
 
-      setIsOpen(false);
+      onOpenChange(false);
       resetForm();
     } catch (error) {
       setSubmitError(
@@ -99,14 +101,7 @@ export function InvestFundsDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="w-full sm:w-auto">
-          <DollarSign />
-          Invest Funds
-        </Button>
-      </DialogTrigger>
-
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Invest Unallocated Funds</DialogTitle>
