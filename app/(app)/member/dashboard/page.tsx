@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import { MemberSummaryCards } from "./components/member-summary-cards";
 import { TransactionsList } from "./components/transactions-list";
@@ -49,6 +50,7 @@ export default async function MemberDashboardPage({
 
   let transactions: Transaction[] = [];
   let totalCount = 0;
+  let totalPages = 1;
   let hasNextPage = false;
   let hasPreviousPage = false;
   let transactionsError: string | null = null;
@@ -72,6 +74,7 @@ export default async function MemberDashboardPage({
     const response = transactionsResult.value;
     transactions = response.results;
     totalCount = response.count;
+    totalPages = Math.max(1, Math.ceil(response.count / response.pageSize));
     hasNextPage = response.count > currentPage * response.pageSize;
     hasPreviousPage = currentPage > 1;
   } else {
@@ -100,41 +103,48 @@ export default async function MemberDashboardPage({
 
         <div className="px-4 lg:px-6">
           {transactionsError ? (
-            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {transactionsError}
             </div>
           ) : null}
 
-          <TransactionsList transactions={transactions} />
+          <TransactionsList
+            transactions={transactions}
+            totalCount={totalCount}
+          />
 
           {!transactionsError && totalCount > 0 ? (
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-zinc-600">
-                Total transactions: {totalCount}
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-muted-foreground text-sm">
+                Page {currentPage} of {totalPages}
               </p>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {hasPreviousPage ? (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={pageHref(currentPage - 1)}>Previous</Link>
+                    <Link href={pageHref(currentPage - 1)}>
+                      <ChevronLeftIcon className="mr-1 size-4" />
+                      Previous
+                    </Link>
                   </Button>
                 ) : (
                   <Button variant="outline" size="sm" disabled>
+                    <ChevronLeftIcon className="mr-1 size-4" />
                     Previous
                   </Button>
                 )}
 
-                <span className="text-sm text-zinc-600">
-                  Page {currentPage}
-                </span>
-
                 {hasNextPage ? (
                   <Button asChild variant="outline" size="sm">
-                    <Link href={pageHref(currentPage + 1)}>Next</Link>
+                    <Link href={pageHref(currentPage + 1)}>
+                      Next
+                      <ChevronRightIcon className="ml-1 size-4" />
+                    </Link>
                   </Button>
                 ) : (
                   <Button variant="outline" size="sm" disabled>
                     Next
+                    <ChevronRightIcon className="ml-1 size-4" />
                   </Button>
                 )}
               </div>

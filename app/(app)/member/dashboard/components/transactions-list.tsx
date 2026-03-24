@@ -7,6 +7,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ReceiptTextIcon } from "lucide-react";
 
 import type { Transaction, TransactionType } from "../types";
 
@@ -25,6 +33,13 @@ function formatDate(date: string) {
     day: "2-digit",
     month: "short",
     year: "numeric",
+  });
+}
+
+function formatTime(date: string) {
+  return new Date(date).toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -49,84 +64,135 @@ function transactionTypeBadgeVariant(
 
 type TransactionsListProps = {
   transactions: Transaction[];
+  totalCount: number;
 };
 
-export function TransactionsList({ transactions }: TransactionsListProps) {
-  if (transactions.length === 0) {
-    return (
-      <div className="rounded-md border py-6 text-center text-sm text-zinc-600">
-        No transactions found.
-      </div>
-    );
-  }
-
+export function TransactionsList({
+  transactions,
+  totalCount,
+}: TransactionsListProps) {
   return (
-    <>
-      <div className="space-y-3 md:hidden">
-        {transactions.map((transaction, index) => (
-          <article key={index} className="space-y-3 rounded-md border p-4">
-            <div className="flex items-start justify-between gap-3">
-              <h3 className="text-sm font-semibold">
-                {transaction.description}
-              </h3>
-              <Badge variant={transactionTypeBadgeVariant(transaction.type)}>
-                {formatTransactionType(transaction.type)}
-              </Badge>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-muted flex size-10 items-center justify-center rounded-lg">
+              <ReceiptTextIcon className="text-muted-foreground size-5" />
             </div>
-            <dl className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <dt className="text-zinc-500">Date</dt>
-                <dd>{formatDate(transaction.date)}</dd>
-              </div>
-              <div>
-                <dt className="text-zinc-500">Amount</dt>
-                <dd>{formatCurrency(transaction.amount)}</dd>
-              </div>
-              <div className="col-span-2">
-                <dt className="text-zinc-500">Cumulative Contributions</dt>
-                <dd>{formatCurrency(transaction.cumulativeContributions)}</dd>
-              </div>
-            </dl>
-          </article>
-        ))}
-      </div>
+            <div>
+              <CardTitle>Recent Transactions</CardTitle>
+              <CardDescription>
+                {totalCount > 0
+                  ? `${totalCount} transaction${totalCount !== 1 ? "s" : ""} on record`
+                  : "No transactions yet"}
+              </CardDescription>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {transactions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="bg-muted mb-4 flex size-12 items-center justify-center rounded-full">
+              <ReceiptTextIcon className="text-muted-foreground size-6" />
+            </div>
+            <p className="text-sm font-medium">No transactions found</p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Your transactions will appear here once recorded.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile cards */}
+            <div className="space-y-3 md:hidden">
+              {transactions.map((transaction, index) => (
+                <div
+                  key={index}
+                  className="border-border flex items-center justify-between gap-4 rounded-lg border p-4"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium">
+                        {transaction.description}
+                      </p>
+                      <Badge
+                        variant={transactionTypeBadgeVariant(transaction.type)}
+                      >
+                        {formatTransactionType(transaction.type)}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground mt-1 text-xs">
+                      {formatDate(transaction.date)} at{" "}
+                      {formatTime(transaction.date)}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold tabular-nums">
+                      {formatCurrency(transaction.amount)}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 text-xs tabular-nums">
+                      Total: {formatCurrency(transaction.cumulativeContributions)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-      <div className="hidden rounded-md border md:block">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="text-right">
-                Cumulative Contributions
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.map((transaction, index) => (
-              <TableRow key={index}>
-                <TableCell>{formatDate(transaction.date)}</TableCell>
-                <TableCell>{transaction.description}</TableCell>
-                <TableCell>
-                  <Badge
-                    variant={transactionTypeBadgeVariant(transaction.type)}
-                  >
-                    {formatTransactionType(transaction.type)}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(transaction.amount)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(transaction.cumulativeContributions)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    </>
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[140px]">Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="w-[120px]">Type</TableHead>
+                    <TableHead className="w-[150px] text-right">
+                      Amount
+                    </TableHead>
+                    <TableHead className="w-[180px] text-right">
+                      Cumulative Total
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((transaction, index) => (
+                    <TableRow key={index}>
+                      <TableCell>
+                        <div>
+                          <span className="text-foreground text-sm">
+                            {formatDate(transaction.date)}
+                          </span>
+                          <span className="text-muted-foreground ml-2 text-xs">
+                            {formatTime(transaction.date)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {transaction.description}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={transactionTypeBadgeVariant(
+                            transaction.type
+                          )}
+                        >
+                          {formatTransactionType(transaction.type)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums">
+                        {formatCurrency(transaction.amount)}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-right tabular-nums">
+                        {formatCurrency(transaction.cumulativeContributions)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
