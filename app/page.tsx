@@ -140,7 +140,7 @@ const features = [
     icon: BarChart3Icon,
     title: "Investment Management",
     description:
-      "Track investment vehicles, NAV records, and portfolio allocation. Full visibility into where your money is working.",
+      "Track investments, returns, and portfolio allocation. Full visibility into where your money is working.",
   },
   {
     icon: UsersIcon,
@@ -164,7 +164,7 @@ const features = [
     icon: LockKeyholeIcon,
     title: "Secure by Design",
     description:
-      "JWT authentication, immutable financial records, and a full audit log. Your financial data is protected at every layer.",
+      "Strong authentication, tamper-proof financial records, and a full audit log. Your financial data is protected at every layer.",
   },
 ];
 
@@ -275,17 +275,17 @@ function SecuritySection() {
               Your finances, protected
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-              Every financial record is immutable — contributions, share
+              Every financial record is permanent — contributions, share
               allocations, and audit entries cannot be altered or deleted once
-              created. Combined with JWT authentication and role-based access
-              controls, our data stays secure and trustworthy.
+              created. Combined with secure authentication and access
+              controls, our data stays safe and trustworthy.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
               {[
-                "Immutable records",
+                "Tamper-proof records",
                 "Full audit trail",
-                "JWT authentication",
-                "Role-based access",
+                "Secure login",
+                "Member & admin access",
               ].map((tag) => (
                 <span
                   key={tag}
