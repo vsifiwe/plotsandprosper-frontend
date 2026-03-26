@@ -42,3 +42,23 @@ export type MemberSummary = {
   membership: SummaryMetric;
   investment: SummaryMetric;
 };
+
+export const GOAL_TIMELINES = ["3_MONTHS", "6_MONTHS", "1_YEAR"] as const;
+
+export type GoalTimeline = (typeof GOAL_TIMELINES)[number];
+
+export type MemberGoal = {
+  id: number;
+  timeline: GoalTimeline;
+  targetAmount: string;
+  currentValue: string;
+  progressPercentage: string;
+  gapToTarget: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateMemberGoalInput = {
+  timeline: GoalTimeline;
+  targetAmount: number;
+};

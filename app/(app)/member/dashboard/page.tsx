@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 
 import { MemberSummaryCards } from "./components/member-summary-cards";
+import { MemberGoalPanel } from "./components/member-goal-panel";
 import { TransactionsList } from "./components/transactions-list";
 import { InvestmentsList } from "./components/investments-list";
 import {
@@ -18,7 +19,8 @@ import {
   fetchMemberInvestments,
   InvestmentsApiError,
 } from "./lib/investments-api";
-import type { MemberSummary, Transaction, Investment } from "./types";
+import { fetchMemberGoal, GoalApiError } from "./lib/goal-api";
+import type { MemberGoal, MemberSummary, Transaction, Investment } from "./types";
 
 type SearchParams = {
   page?: string | string[];
@@ -62,12 +64,15 @@ export default async function MemberDashboardPage({
 
   let investments: Investment[] = [];
   let investmentsError: string | null = null;
+  let goal: MemberGoal | null = null;
+  let goalError: string | null = null;
 
-  const [summaryResult, transactionsResult, investmentsResult] =
+  const [summaryResult, transactionsResult, investmentsResult, goalResult] =
     await Promise.allSettled([
       fetchMemberSummary(),
       fetchMemberTransactions(currentPage),
       fetchMemberInvestments(),
+      fetchMemberGoal(),
     ]);
 
   if (summaryResult.status === "fulfilled") {
@@ -105,6 +110,16 @@ export default async function MemberDashboardPage({
         : "Unable to load investments at the moment.";
   }
 
+  if (goalResult.status === "fulfilled") {
+    goal = goalResult.value;
+  } else {
+    const error = goalResult.reason;
+    goalError =
+      error instanceof GoalApiError
+        ? error.message
+        : "Unable to load your goal at the moment.";
+  }
+
   function pageHref(pageNumber: number): string {
     if (pageNumber <= 1) return "/member/dashboard";
     return `/member/dashboard?page=${pageNumber}`;
@@ -120,6 +135,10 @@ export default async function MemberDashboardPage({
         ) : null}
 
         <MemberSummaryCards summary={summary} />
+
+        <div className="px-4 lg:px-6">
+          <MemberGoalPanel initialGoal={goal} loadError={goalError} />
+        </div>
 
         <div className="px-4 lg:px-6">
           {transactionsError ? (
