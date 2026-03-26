@@ -1,8 +1,7 @@
 import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
-
-const DEFAULT_ANALYTICS_ENDPOINT = "http://localhost:8000/api/v1/analytics/";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 
 export type DashboardAnalytics = {
   memberCount: number;
@@ -19,15 +18,6 @@ export class AnalyticsApiError extends Error {
     this.name = "AnalyticsApiError";
     this.status = status;
   }
-}
-
-function getAnalyticsEndpoint(): string {
-  const configuredEndpoint = process.env.BACKEND_ANALYTICS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_ANALYTICS_ENDPOINT;
 }
 
 function parseDashboardAnalytics(payload: unknown): DashboardAnalytics | null {
@@ -53,30 +43,12 @@ function parseDashboardAnalytics(payload: unknown): DashboardAnalytics | null {
   };
 }
 
-function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
-}
-
 export async function fetchAdminDashboardAnalytics(): Promise<DashboardAnalytics> {
   const session = await requireRole("admin");
 
   let response: Response;
   try {
-    response = await fetch(getAnalyticsEndpoint(), {
+    response = await fetch(buildBackendUrl("/analytics/"), {
       method: "GET",
       headers: {
         Accept: "application/json",

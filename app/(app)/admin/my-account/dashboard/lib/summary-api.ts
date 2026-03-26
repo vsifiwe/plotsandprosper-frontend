@@ -1,11 +1,9 @@
 import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 
 import type { MemberSummary, SummaryMetric } from "../types";
-
-const DEFAULT_SUMMARY_ENDPOINT =
-  "http://localhost:8000/api/v1/members/me/statement/summary/";
 
 export class SummaryApiError extends Error {
   readonly status: number;
@@ -15,16 +13,6 @@ export class SummaryApiError extends Error {
     this.name = "SummaryApiError";
     this.status = status;
   }
-}
-
-function getSummaryEndpoint(): string {
-  const configuredEndpoint =
-    process.env.BACKEND_MEMBER_SUMMARY_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_SUMMARY_ENDPOINT;
 }
 
 function isValidMetric(value: unknown): value is SummaryMetric {
@@ -56,30 +44,12 @@ function parseMemberSummary(payload: unknown): MemberSummary | null {
   };
 }
 
-function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
-}
-
 export async function fetchAdminPersonalSummary(): Promise<MemberSummary> {
   const session = await requireRole("admin");
 
   let response: Response;
   try {
-    response = await fetch(getSummaryEndpoint(), {
+    response = await fetch(buildBackendUrl("/members/me/statement/summary/"), {
       method: "GET",
       headers: {
         Accept: "application/json",

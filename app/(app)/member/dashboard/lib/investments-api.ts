@@ -1,11 +1,9 @@
 import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 
 import type { Investment } from "../types";
-
-const DEFAULT_INVESTMENTS_ENDPOINT =
-  "http://localhost:8000/api/v1/members/me/statement/investments/";
 
 export class InvestmentsApiError extends Error {
   readonly status: number;
@@ -15,16 +13,6 @@ export class InvestmentsApiError extends Error {
     this.name = "InvestmentsApiError";
     this.status = status;
   }
-}
-
-function getInvestmentsEndpoint(): string {
-  const configuredEndpoint =
-    process.env.BACKEND_MEMBER_INVESTMENTS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_INVESTMENTS_ENDPOINT;
 }
 
 function parseInvestment(payload: unknown): Investment | null {
@@ -69,30 +57,12 @@ function parseInvestments(payload: unknown): Investment[] | null {
   return investments;
 }
 
-function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
-}
-
 export async function fetchMemberInvestments(): Promise<Investment[]> {
   const session = await requireRole("member");
 
   let response: Response;
   try {
-    response = await fetch(getInvestmentsEndpoint(), {
+    response = await fetch(buildBackendUrl("/members/me/statement/investments/"), {
       method: "GET",
       headers: {
         Accept: "application/json",

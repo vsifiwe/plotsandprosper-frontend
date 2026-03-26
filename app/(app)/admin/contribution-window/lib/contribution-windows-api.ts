@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 
 import {
   type ContributionWindow,
@@ -8,9 +9,6 @@ import {
   type PaginatedContributionWindows,
   type PaginationParams,
 } from "../types";
-
-const DEFAULT_CONTRIBUTION_WINDOWS_ENDPOINT =
-  "http://localhost:8000/api/v1/contribution-windows/";
 export const CONTRIBUTION_WINDOWS_PAGE_SIZE = 10;
 
 type BackendContributionWindow = {
@@ -40,14 +38,6 @@ export class ContributionWindowsApiError extends Error {
   }
 }
 
-function getContributionWindowsEndpoint(): string {
-  const configuredEndpoint = process.env.BACKEND_CONTRIBUTION_WINDOWS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_CONTRIBUTION_WINDOWS_ENDPOINT;
-}
 
 function parseBackendContributionWindow(payload: unknown): ContributionWindow | null {
   if (!payload || typeof payload !== "object") {
@@ -132,23 +122,6 @@ function parsePaginatedContributionWindows(
   };
 }
 
-function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
-}
 
 function mapCreateInputToPayload(
   input: CreateContributionWindowInput
@@ -167,7 +140,7 @@ export async function fetchContributionWindows(
   const session = await requireRole("admin");
 
   // Build URL with pagination parameters
-  const url = new URL(getContributionWindowsEndpoint());
+  const url = new URL(buildBackendUrl("/contribution-windows/"));
   if (params?.page) {
     url.searchParams.set("page", params.page.toString());
   }
@@ -234,7 +207,7 @@ export async function createContributionWindow(
 
   let response: Response;
   try {
-    response = await fetch(getContributionWindowsEndpoint(), {
+    response = await fetch(buildBackendUrl("/contribution-windows/"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

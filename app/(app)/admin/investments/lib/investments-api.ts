@@ -1,6 +1,7 @@
 import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 
 import {
   type CreateInvestmentInput,
@@ -9,13 +10,6 @@ import {
   type PaginatedInvestments,
   type ReallocateFundsInput,
 } from "../types";
-
-const DEFAULT_ADMIN_INVESTMENTS_ENDPOINT =
-  "http://localhost:8000/api/v1/investment-accounts/";
-const DEFAULT_INVESTMENT_EVENTS_ENDPOINT =
-  "http://localhost:8000/api/v1/investment-events/";
-const DEFAULT_FUND_REALLOCATIONS_ENDPOINT =
-  "http://localhost:8000/api/v1/fund-reallocations/";
 export const ADMIN_INVESTMENTS_PAGE_SIZE = 10;
 
 type BackendInvestment = {
@@ -44,28 +38,13 @@ export class InvestmentsApiError extends Error {
   }
 }
 
-function getAdminInvestmentsEndpoint(): string {
-  const configuredEndpoint = process.env.BACKEND_INVESTMENTS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_ADMIN_INVESTMENTS_ENDPOINT;
-}
-
 function createAdminInvestmentsUrl(page: number): string {
-  const endpoint = getAdminInvestmentsEndpoint();
+  const endpoint = buildBackendUrl("/investment-accounts/");
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-
-  try {
-    const url = new URL(endpoint);
-    url.searchParams.set("page", String(safePage));
-    url.searchParams.set("page_size", String(ADMIN_INVESTMENTS_PAGE_SIZE));
-    return url.toString();
-  } catch {
-    const separator = endpoint.includes("?") ? "&" : "?";
-    return `${endpoint}${separator}page=${safePage}&page_size=${ADMIN_INVESTMENTS_PAGE_SIZE}`;
-  }
+  const url = new URL(endpoint);
+  url.searchParams.set("page", String(safePage));
+  url.searchParams.set("page_size", String(ADMIN_INVESTMENTS_PAGE_SIZE));
+  return url.toString();
 }
 
 function parseBackendInvestment(payload: unknown): Investment | null {
@@ -152,24 +131,6 @@ function parsePaginatedInvestments(payload: unknown): PaginatedInvestments | nul
   };
 }
 
-function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
-}
-
 function mapCreateInvestmentInputToPayload(
   input: CreateInvestmentInput
 ): CreateBackendInvestmentPayload {
@@ -243,7 +204,7 @@ export async function createAdminInvestment(
 
   let response: Response;
   try {
-    response = await fetch(getAdminInvestmentsEndpoint(), {
+    response = await fetch(buildBackendUrl("/investment-accounts/"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -293,14 +254,6 @@ export async function createAdminInvestment(
   return createdInvestment;
 }
 
-function getInvestmentEventsEndpoint(): string {
-  const configuredEndpoint = process.env.BACKEND_INVESTMENT_EVENTS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_INVESTMENT_EVENTS_ENDPOINT;
-}
 
 export async function createInvestmentEvent(
   input: InvestFundsInput
@@ -316,7 +269,7 @@ export async function createInvestmentEvent(
 
   let response: Response;
   try {
-    response = await fetch(getInvestmentEventsEndpoint(), {
+    response = await fetch(buildBackendUrl("/investment-events/"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -356,14 +309,6 @@ export async function createInvestmentEvent(
   }
 }
 
-function getFundReallocationsEndpoint(): string {
-  const configuredEndpoint = process.env.BACKEND_FUND_REALLOCATIONS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_FUND_REALLOCATIONS_ENDPOINT;
-}
 
 export async function createFundReallocation(
   input: ReallocateFundsInput
@@ -378,7 +323,7 @@ export async function createFundReallocation(
 
   let response: Response;
   try {
-    response = await fetch(getFundReallocationsEndpoint(), {
+    response = await fetch(buildBackendUrl("/fund-reallocations/"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

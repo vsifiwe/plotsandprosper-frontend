@@ -1,14 +1,13 @@
 import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 
 import {
   type CreateMemberInput,
   type Member,
   type PaginatedMembers,
 } from "../types";
-
-const DEFAULT_ADMIN_MEMBERS_ENDPOINT = "http://localhost:8000/api/v1/members/";
 export const ADMIN_MEMBERS_PAGE_SIZE = 10;
 
 type BackendMember = {
@@ -49,28 +48,13 @@ export class MembersApiError extends Error {
   }
 }
 
-function getAdminMembersEndpoint(): string {
-  const configuredEndpoint = process.env.BACKEND_ADMIN_MEMBERS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_ADMIN_MEMBERS_ENDPOINT;
-}
-
 function createAdminMembersUrl(page: number): string {
-  const endpoint = getAdminMembersEndpoint();
+  const endpoint = buildBackendUrl("/members/");
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-
-  try {
-    const url = new URL(endpoint);
-    url.searchParams.set("page", String(safePage));
-    url.searchParams.set("page_size", String(ADMIN_MEMBERS_PAGE_SIZE));
-    return url.toString();
-  } catch {
-    const separator = endpoint.includes("?") ? "&" : "?";
-    return `${endpoint}${separator}page=${safePage}&page_size=${ADMIN_MEMBERS_PAGE_SIZE}`;
-  }
+  const url = new URL(endpoint);
+  url.searchParams.set("page", String(safePage));
+  url.searchParams.set("page_size", String(ADMIN_MEMBERS_PAGE_SIZE));
+  return url.toString();
 }
 
 function parseBackendMember(payload: unknown): Member | null {
@@ -153,24 +137,6 @@ function parsePaginatedMembers(payload: unknown): PaginatedMembers | null {
   };
 }
 
-function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
-}
-
 function mapCreateMemberInputToPayload(
   input: CreateMemberInput
 ): CreateBackendMemberPayload {
@@ -246,7 +212,7 @@ export async function createAdminMember(
 
   let response: Response;
   try {
-    response = await fetch(getAdminMembersEndpoint(), {
+    response = await fetch(buildBackendUrl("/members/"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

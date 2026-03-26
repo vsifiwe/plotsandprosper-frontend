@@ -1,9 +1,7 @@
 import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
-
-const DEFAULT_CONTRIBUTIONS_ENDPOINT =
-  "http://localhost:8000/api/v1/contributions/";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 export const CONTRIBUTIONS_PAGE_SIZE = 10;
 
 export type ContributionStatus = "POSTED" | "PENDING";
@@ -81,32 +79,6 @@ export class ContributionsApiError extends Error {
   }
 }
 
-function getContributionsEndpoint(): string {
-  const configuredEndpoint = process.env.BACKEND_CONTRIBUTIONS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_CONTRIBUTIONS_ENDPOINT;
-}
-
-function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
-}
 
 function parseMember(
   payload: unknown
@@ -260,7 +232,7 @@ export async function fetchContributions(
 ): Promise<PaginatedContributionsResponse> {
   const session = await requireRole("admin");
 
-  const url = new URL(getContributionsEndpoint());
+  const url = new URL(buildBackendUrl("/contributions/"));
   if (params?.page) {
     url.searchParams.set("page", String(params.page));
   }
@@ -329,7 +301,7 @@ export async function createContribution(
 
   let response: Response;
   try {
-    response = await fetch(getContributionsEndpoint(), {
+    response = await fetch(buildBackendUrl("/contributions/"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

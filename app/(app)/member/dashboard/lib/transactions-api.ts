@@ -1,11 +1,9 @@
 import "server-only";
 
 import { requireRole } from "@/app/lib/auth";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 
 import type { PaginatedTransactions, Transaction } from "../types";
-
-const DEFAULT_TRANSACTIONS_ENDPOINT =
-  "http://localhost:8000/api/v1/members/me/statement/transactions/";
 export const TRANSACTIONS_PAGE_SIZE = 20;
 
 type BackendTransaction = {
@@ -26,29 +24,13 @@ export class TransactionsApiError extends Error {
   }
 }
 
-function getTransactionsEndpoint(): string {
-  const configuredEndpoint =
-    process.env.BACKEND_MEMBER_TRANSACTIONS_ENDPOINT?.trim();
-  if (configuredEndpoint && configuredEndpoint.length > 0) {
-    return configuredEndpoint;
-  }
-
-  return DEFAULT_TRANSACTIONS_ENDPOINT;
-}
-
 function createTransactionsUrl(page: number): string {
-  const endpoint = getTransactionsEndpoint();
+  const endpoint = buildBackendUrl("/members/me/statement/transactions/");
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-
-  try {
-    const url = new URL(endpoint);
-    url.searchParams.set("page", String(safePage));
-    url.searchParams.set("page_size", String(TRANSACTIONS_PAGE_SIZE));
-    return url.toString();
-  } catch {
-    const separator = endpoint.includes("?") ? "&" : "?";
-    return `${endpoint}${separator}page=${safePage}&page_size=${TRANSACTIONS_PAGE_SIZE}`;
-  }
+  const url = new URL(endpoint);
+  url.searchParams.set("page", String(safePage));
+  url.searchParams.set("page_size", String(TRANSACTIONS_PAGE_SIZE));
+  return url.toString();
 }
 
 function parseBackendTransaction(payload: unknown): Transaction | null {
@@ -127,24 +109,6 @@ function parsePaginatedTransactions(
       typeof raw.page_size === "number" ? raw.page_size : TRANSACTIONS_PAGE_SIZE,
     results,
   };
-}
-
-function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
 }
 
 export async function fetchMemberTransactions(

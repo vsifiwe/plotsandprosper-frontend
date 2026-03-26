@@ -1,8 +1,8 @@
 import "server-only";
 
 import { parseUserRole, type AuthSession } from "@/app/lib/auth-types";
+import { buildBackendUrl, extractErrorMessage } from "@/app/lib/server-api-utils";
 
-const DEFAULT_BACKEND_API_BASE_URL = "http://localhost:8000/api/v1";
 const AUTH_TOKEN_PATH = "/auth/login/";
 
 export class BackendApiError extends Error {
@@ -19,39 +19,6 @@ type LoginCredentials = {
   username: string;
   password: string;
 };
-
-function getBackendApiBaseUrl(): string {
-  const configuredBaseUrl = process.env.BACKEND_API_BASE_URL?.trim();
-  const baseUrl =
-    configuredBaseUrl && configuredBaseUrl.length > 0
-      ? configuredBaseUrl
-      : DEFAULT_BACKEND_API_BASE_URL;
-
-  return baseUrl.replace(/\/+$/, "");
-}
-
-function buildBackendUrl(path: string): string {
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${getBackendApiBaseUrl()}${normalizedPath}`;
-}
-
-function extractBackendErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const detail = (payload as { detail?: unknown }).detail;
-  if (typeof detail === "string" && detail.trim().length > 0) {
-    return detail;
-  }
-
-  const message = (payload as { message?: unknown }).message;
-  if (typeof message === "string" && message.trim().length > 0) {
-    return message;
-  }
-
-  return null;
-}
 
 function parseAuthSession(payload: unknown): AuthSession | null {
   if (!payload || typeof payload !== "object") {
@@ -133,7 +100,7 @@ export async function loginWithUsernameAndPassword(
       throw new BackendApiError("Invalid username or password.", response.status);
     }
 
-    const backendMessage = extractBackendErrorMessage(payload);
+    const backendMessage = extractErrorMessage(payload);
     throw new BackendApiError(
       backendMessage ?? "Unable to sign in right now. Please try again shortly.",
       response.status
