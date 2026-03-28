@@ -8,8 +8,8 @@ import type { MemberGoal } from "./types";
 
 const createGoalSchema = z.object({
   timeline: z.enum(["6_MONTHS", "1_YEAR", "2_YEARS", "5_YEARS", "10_YEARS"]),
-  targetAmount: z
-    .number({ coerce: true })
+  targetAmount: z.coerce
+    .number()
     .finite()
     .positive("Target amount must be greater than zero."),
 });
