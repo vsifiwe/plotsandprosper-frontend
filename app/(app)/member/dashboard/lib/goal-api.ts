@@ -16,7 +16,13 @@ export class GoalApiError extends Error {
 }
 
 function isGoalTimeline(value: unknown): value is GoalTimeline {
-  return value === "3_MONTHS" || value === "6_MONTHS" || value === "1_YEAR";
+  return (
+    value === "6_MONTHS" ||
+    value === "1_YEAR" ||
+    value === "2_YEARS" ||
+    value === "5_YEARS" ||
+    value === "10_YEARS"
+  );
 }
 
 function parseMemberGoal(payload: unknown): MemberGoal | null {

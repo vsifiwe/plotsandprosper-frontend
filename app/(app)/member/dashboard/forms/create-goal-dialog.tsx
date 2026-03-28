@@ -43,12 +43,16 @@ const INITIAL_FORM_STATE: GoalFormState = {
 
 function formatTimelineLabel(timeline: GoalTimeline): string {
   switch (timeline) {
-    case "3_MONTHS":
-      return "3 months";
     case "6_MONTHS":
       return "6 months";
     case "1_YEAR":
       return "1 year";
+    case "2_YEARS":
+      return "2 years";
+    case "5_YEARS":
+      return "5 years";
+    case "10_YEARS":
+      return "10 years";
   }
 }
 

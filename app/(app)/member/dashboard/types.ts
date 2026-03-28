@@ -43,7 +43,13 @@ export type MemberSummary = {
   investment: SummaryMetric;
 };
 
-export const GOAL_TIMELINES = ["3_MONTHS", "6_MONTHS", "1_YEAR"] as const;
+export const GOAL_TIMELINES = [
+  "6_MONTHS",
+  "1_YEAR",
+  "2_YEARS",
+  "5_YEARS",
+  "10_YEARS",
+] as const;
 
 export type GoalTimeline = (typeof GOAL_TIMELINES)[number];
 

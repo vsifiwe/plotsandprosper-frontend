@@ -32,12 +32,16 @@ function formatRwf(value: string): string {
 
 function formatTimelineLabel(timeline: MemberGoal["timeline"]): string {
   switch (timeline) {
-    case "3_MONTHS":
-      return "3 months";
     case "6_MONTHS":
       return "6 months";
     case "1_YEAR":
       return "1 year";
+    case "2_YEARS":
+      return "2 years";
+    case "5_YEARS":
+      return "5 years";
+    case "10_YEARS":
+      return "10 years";
   }
 }
 
@@ -178,45 +182,20 @@ export function MemberGoalPanel({
               </div>
             </div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="rounded-xl border border-dashed bg-muted/20 p-6">
-                <p className="text-muted-foreground text-sm">No goal created yet</p>
-                <h3 className="mt-2 text-2xl font-semibold">Start with a target you can see every day.</h3>
-                <p className="text-muted-foreground mt-3 max-w-xl text-sm leading-6">
-                  Pick a timeline, set your amount, and this section will turn into a live progress tracker with your savings gap and completion status.
-                </p>
-                <Button onClick={() => setIsDialogOpen(true)} className="mt-5">
-                  <Target className="size-4" />
-                  Create your first goal
-                </Button>
-              </div>
-
-              <div className="bg-background rounded-xl border p-6">
-                <p className="text-muted-foreground text-xs uppercase tracking-[0.22em]">
-                  Preview
-                </p>
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <p className="text-muted-foreground text-sm">Progress bar</p>
-                    <div className="bg-muted mt-2 h-4 rounded-full">
-                      <div className="bg-primary h-full w-1/4 rounded-full opacity-80" />
-                    </div>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                    <div className="rounded-xl border p-4">
-                      <p className="text-muted-foreground text-sm">Target</p>
-                      <p className="mt-1 text-lg font-semibold">100,000 RWF</p>
-                    </div>
-                    <div className="rounded-xl border p-4">
-                      <p className="text-muted-foreground text-sm">Current</p>
-                      <p className="mt-1 text-lg font-semibold">0 RWF</p>
-                    </div>
-                    <div className="rounded-xl border p-4">
-                      <p className="text-muted-foreground text-sm">Timeline</p>
-                      <p className="mt-1 text-lg font-semibold">6 months</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="rounded-xl border border-dashed bg-muted/20 p-6">
+              <p className="text-muted-foreground text-sm">No goal created yet</p>
+              <h3 className="mt-2 text-2xl font-semibold">Start with a target you can see every day.</h3>
+              <p className="text-muted-foreground mt-3 max-w-2xl text-sm leading-6">
+                Set your savings target and timeline to start tracking real progress on this dashboard.
+              </p>
+              <Button onClick={() => setIsDialogOpen(true)} className="mt-5">
+                <Target className="size-4" />
+                Create your first goal
+              </Button>
+              <div className="mt-5 rounded-xl border bg-background px-4 py-3 text-sm">
+                <span className="text-muted-foreground">
+                  Once your goal is created, this section will show your target amount, current saved amount, remaining gap, and progress.
+                </span>
               </div>
             </div>
           )}
